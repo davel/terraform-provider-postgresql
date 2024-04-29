@@ -4,7 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"net"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -21,7 +24,46 @@ func (d proxyDriver) Open(name string) (driver.Conn, error) {
 
 func (d proxyDriver) Dial(network, address string) (net.Conn, error) {
 	dialer := proxy.FromEnvironment()
-	return dialer.Dial(network, address)
+
+	u, err := url.Parse(address)
+
+	if err == nil {
+		return nil, err
+	}
+
+	var port = "5432"
+	if u.Port() != "" {
+		port = u.Port()
+	}
+
+	// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+	values, err := url.ParseQuery(u.RawQuery)
+	if err == nil {
+		return nil, err
+	}
+
+	if values.Get("port") != "" {
+		port = values.Get("port")
+	}
+
+	hosts := []string{}
+
+	if values.Get("hostaddr") != "" {
+		hosts = strings.Split(",", values.Get("hostaddr"))
+	}
+
+	if len(hosts) == 0 {
+		hosts = []string{u.Hostname()}
+	}
+
+	var c net.Conn
+	for _, host := range hosts {
+		c, err = dialer.Dial(network, fmt.Sprintf("%s:%s", host, port))
+		if err == nil {
+			break
+		}
+	}
+	return c, err
 }
 
 func (d proxyDriver) DialTimeout(network, address string, timeout time.Duration) (net.Conn, error) {
