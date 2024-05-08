@@ -231,7 +231,7 @@ func (c *Config) connParams() []string {
 
 	if c.HostAddr != "" {
 		params["hostaddr"] = c.HostAddr
-        }
+	}
 
 	paramsArray := []string{}
 	for key, value := range params {
