@@ -292,7 +292,7 @@ func (c *Client) Connect() (*DBConnection, error) {
 		}
 		if err != nil {
 			errString := strings.Replace(err.Error(), c.config.Password, "XXXX", 2)
-			return nil, fmt.Errorf("Error connecting to PostgreSQL server %s (scheme: %s): %s", c.config.Host, c.config.Scheme, errString)
+			return nil, fmt.Errorf("Error connecting to PostgreSQL server %s (scheme: %s): %s", dsn, c.config.Scheme, errString)
 		}
 
 		// We don't want to retain connection
