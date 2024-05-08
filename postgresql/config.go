@@ -229,7 +229,9 @@ func (c *Config) connParams() []string {
 		params["sslrootcert"] = c.SSLRootCertPath
 	}
 
-	params["hostaddr"] = c.HostAddr
+	if c.HostAddr != "" {
+		params["hostaddr"] = c.HostAddr
+        }
 
 	paramsArray := []string{}
 	for key, value := range params {
