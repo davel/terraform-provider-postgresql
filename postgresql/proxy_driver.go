@@ -41,6 +41,10 @@ func (d proxyDriver) Dial(network, address string) (net.Conn, error) {
 		return nil, err
 	}
 
+	if values.Get("port") != "" {
+		port = values.Get("port")
+	}
+
 	hosts := values["hostaddr"]
 	if len(hosts) == 0 {
 		hosts = []string{u.Hostname()}
@@ -48,7 +52,7 @@ func (d proxyDriver) Dial(network, address string) (net.Conn, error) {
 
 	var c net.Conn
 	for nil, host := range hosts {
-		c, err := dialer.Dial(network, fmt.Sprintf("%s:%s", host, port))
+		c, err = dialer.Dial(network, fmt.Sprintf("%s:%s", host, port))
 		if err == nil {
 			break
 		}
