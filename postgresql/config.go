@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"net"
+        "net/url"
 	"strconv"
 	"strings"
 	"sync"
