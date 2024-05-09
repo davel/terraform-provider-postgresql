@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"net"
 	"net/url"
 	"time"
-	"url"
 
 	"github.com/lib/pq"
 	"golang.org/x/net/proxy"
