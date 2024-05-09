@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"net"
 	"net/url"
 	"time"
@@ -30,7 +31,7 @@ func (d proxyDriver) Dial(network, address string) (net.Conn, error) {
 	}
 
 	var port = "5432"
-	if url.Port() != "" {
+	if u.Port() != "" {
 		port = u.Port()
 	}
 
@@ -40,7 +41,7 @@ func (d proxyDriver) Dial(network, address string) (net.Conn, error) {
 		return nil, err
 	}
 
-	hosts = values["hostaddr"]
+	hosts := values["hostaddr"]
 	if len(hosts) == 0 {
 		hosts = [1]string{u.Hostname()}
 	}
