@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"net"
 	"net/url"
 	"strconv"
 	"strings"
@@ -270,6 +272,28 @@ func (c *Config) getDatabaseUsername() string {
 	return c.Username
 }
 
+type driverWrapper struct {
+	HostAddr string
+}
+
+func (d *driverWrapper) Dial(network, address string) (net.Conn, error) {
+	c, err := net.Dial(network, d.HostAddr)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("Connecting from %s to %s", c.LocalAddr(), c.RemoteAddr())
+	return c, nil
+}
+
+func (d *driverWrapper) DialTimeout(network, address string, timeout time.Duration) (net.Conn, error) {
+	c, err := net.DialTimeout(network, d.HostAddr, timeout)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("Connecting from %s to %s", c.LocalAddr(), c.RemoteAddr())
+	return c, nil
+}
+
 // Connect returns a copy to an sql.Open()'ed database connection wrapped in a DBConnection struct.
 // Callers must return their database resources. Use of QueryRow() or Exec() is encouraged.
 // Query() must have their rows.Close()'ed.
@@ -284,7 +308,12 @@ func (c *Client) Connect() (*DBConnection, error) {
 		var db *sql.DB
 		var err error
 		if c.config.Scheme == "postgres" {
-			db, err = sql.Open(proxyDriverName, dsn)
+			if c.config.HostAddr != "" {
+				db, err = postgres.DialOpen(driverWrapper{HostAddr}, dsn)
+
+			} else {
+				db, err = sql.Open(proxyDriverName, dsn)
+			}
 		} else {
 			db, err = postgres.Open(context.Background(), dsn)
 		}
