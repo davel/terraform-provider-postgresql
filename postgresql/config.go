@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 	"unicode"
 
 	"github.com/blang/semver"
@@ -281,7 +282,6 @@ func (d *driverWrapper) Dial(network, address string) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("Connecting from %s to %s", c.LocalAddr(), c.RemoteAddr())
 	return c, nil
 }
 
@@ -290,7 +290,6 @@ func (d *driverWrapper) DialTimeout(network, address string, timeout time.Durati
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("Connecting from %s to %s", c.LocalAddr(), c.RemoteAddr())
 	return c, nil
 }
 
@@ -309,7 +308,7 @@ func (c *Client) Connect() (*DBConnection, error) {
 		var err error
 		if c.config.Scheme == "postgres" {
 			if c.config.HostAddr != "" {
-				db, err = postgres.DialOpen(driverWrapper{HostAddr}, dsn)
+				db, err = postgres.DialOpen(driverWrapper{c.config.HostAddr}, dsn)
 
 			} else {
 				db, err = sql.Open(proxyDriverName, dsn)
