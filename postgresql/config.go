@@ -251,10 +251,14 @@ func (c *Config) connStr(database string) string {
 	if c.Scheme == "gcppostgres" {
 		host = strings.ReplaceAll(host, ":", "/")
 	}
+	scheme = c.Scheme
+	if scheme == "postgres" {
+		scheme = "hostaddr_postgres"
+	}
 
 	connStr := fmt.Sprintf(
 		"%s://%s:%s@%s:%d/%s?%s",
-		c.Scheme,
+		scheme,
 		url.PathEscape(c.Username),
 		url.PathEscape(c.Password),
 		host,
@@ -273,19 +277,46 @@ func (c *Config) getDatabaseUsername() string {
 	return c.Username
 }
 
-type driverWrapper struct {
-	HostAddr string
+type hostAddrAwareDriver struct{}
+
+func (d hostAddrAwareDriver) Open(name string) (driver.Conn, error) {
+	return pq.DialOpen(&hostAddrAwareDriver{}, name)
 }
 
-func (d *driverWrapper) Dial(network, address string) (net.Conn, error) {
-	c, err := net.Dial(network, d.HostAddr)
-	if err != nil {
+func (d *hostAddrAwareDriver) Dial(network, address string) (net.Conn, error) {
+	url, err := url.Parse(string)
+
+	if err == nil {
 		return nil, err
 	}
-	return c, nil
+
+	var port = "5432"
+	if url.Port() != "" {
+		port = url.Port()
+	}
+	// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+
+	values, err := url.ParseQuery()
+	if err == nil {
+		return nil, err
+	}
+
+	hosts = values["hostaddr"]
+	if len(hosts) == 0 {
+		hosts = [1]string{url.Host()}
+	}
+
+	var c net.Conn
+	for index, host := range hosts {
+		c, err := net.Dial(network, fmt.Sprintf("%s:%s", host, port))
+		if err == nil {
+			break
+		}
+	}
+	return c, err
 }
 
-func (d *driverWrapper) DialTimeout(network, address string, timeout time.Duration) (net.Conn, error) {
+func (d *hostAddrAwareDriver) DialTimeout(network, address string, timeout time.Duration) (net.Conn, error) {
 	c, err := net.DialTimeout(network, d.HostAddr, timeout)
 	if err != nil {
 		return nil, err
@@ -307,16 +338,7 @@ func (c *Client) Connect() (*DBConnection, error) {
 		var db *sql.DB
 		var err error
 		if c.config.Scheme == "postgres" {
-			if c.config.HostAddr != "" {
-				var dbConn driver.Conn
-				dbConn, err = pq.DialOpen(&driverWrapper{c.config.HostAddr}, dsn)
-				if err == nil {
-					db = sql.OpenDB(dbConn)
-				}
-
-			} else {
-				db, err = sql.Open(proxyDriverName, dsn)
-			}
+			db, err = sql.Open(proxyDriverName, dsn)
 		} else {
 			db, err = postgres.Open(context.Background(), dsn)
 		}
@@ -381,4 +403,8 @@ func fingerprintCapabilities(db *sql.DB) (*semver.Version, error) {
 	}
 
 	return &version, nil
+}
+
+func init() {
+	sql.Register("hostaddr_postgres", hostAddrAwareDriver{})
 }
