@@ -62,6 +62,7 @@ func (d proxyDriver) Dial(network, address string) (net.Conn, error) {
 		if err == nil {
 			break
 		}
+		fmt.Errorf("could not connect to %s:%s: %s", host, port, err)
 	}
 	return c, err
 }
