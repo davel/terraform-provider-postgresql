@@ -6,15 +6,13 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"net"
-	"net/url"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 	"unicode"
 
 	"github.com/blang/semver"
-	pq "github.com/lib/pq" // PostgreSQL db
+	_ "github.com/lib/pq" // PostgreSQL db
 	"gocloud.dev/postgres"
 	_ "gocloud.dev/postgres/awspostgres"
 	_ "gocloud.dev/postgres/gcppostgres"
@@ -251,14 +249,10 @@ func (c *Config) connStr(database string) string {
 	if c.Scheme == "gcppostgres" {
 		host = strings.ReplaceAll(host, ":", "/")
 	}
-	scheme = c.Scheme
-	if scheme == "postgres" {
-		scheme = "hostaddr_postgres"
-	}
 
 	connStr := fmt.Sprintf(
 		"%s://%s:%s@%s:%d/%s?%s",
-		scheme,
+		c.Scheme,
 		url.PathEscape(c.Username),
 		url.PathEscape(c.Password),
 		host,
@@ -275,53 +269,6 @@ func (c *Config) getDatabaseUsername() string {
 		return c.DatabaseUsername
 	}
 	return c.Username
-}
-
-type hostAddrAwareDriver struct{}
-
-func (d hostAddrAwareDriver) Open(name string) (driver.Conn, error) {
-	return pq.DialOpen(&hostAddrAwareDriver{}, name)
-}
-
-func (d *hostAddrAwareDriver) Dial(network, address string) (net.Conn, error) {
-	url, err := url.Parse(string)
-
-	if err == nil {
-		return nil, err
-	}
-
-	var port = "5432"
-	if url.Port() != "" {
-		port = url.Port()
-	}
-	// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
-
-	values, err := url.ParseQuery()
-	if err == nil {
-		return nil, err
-	}
-
-	hosts = values["hostaddr"]
-	if len(hosts) == 0 {
-		hosts = [1]string{url.Host()}
-	}
-
-	var c net.Conn
-	for index, host := range hosts {
-		c, err := net.Dial(network, fmt.Sprintf("%s:%s", host, port))
-		if err == nil {
-			break
-		}
-	}
-	return c, err
-}
-
-func (d *hostAddrAwareDriver) DialTimeout(network, address string, timeout time.Duration) (net.Conn, error) {
-	c, err := net.DialTimeout(network, d.HostAddr, timeout)
-	if err != nil {
-		return nil, err
-	}
-	return c, nil
 }
 
 // Connect returns a copy to an sql.Open()'ed database connection wrapped in a DBConnection struct.
@@ -403,8 +350,4 @@ func fingerprintCapabilities(db *sql.DB) (*semver.Version, error) {
 	}
 
 	return &version, nil
-}
-
-func init() {
-	sql.Register("hostaddr_postgres", hostAddrAwareDriver{})
 }

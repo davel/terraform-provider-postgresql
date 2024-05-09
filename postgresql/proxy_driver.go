@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"net"
 	"time"
+	"url"
 
 	"github.com/lib/pq"
 	"golang.org/x/net/proxy"
@@ -21,6 +22,38 @@ func (d proxyDriver) Open(name string) (driver.Conn, error) {
 
 func (d proxyDriver) Dial(network, address string) (net.Conn, error) {
 	dialer := proxy.FromEnvironment()
+
+	url, err := url.Parse(address)
+
+	if err == nil {
+		return nil, err
+	}
+
+	var port = "5432"
+	if url.Port() != "" {
+		port = url.Port()
+	}
+
+	// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+	values, err := url.ParseQuery()
+	if err == nil {
+		return nil, err
+	}
+
+	hosts = values["hostaddr"]
+	if len(hosts) == 0 {
+		hosts = [1]string{url.Host()}
+	}
+
+	var c net.Conn
+	for index, host := range hosts {
+		c, err := net.Dial(network, fmt.Sprintf("%s:%s", host, port))
+		if err == nil {
+			break
+		}
+	}
+	return c, err
+
 	return dialer.Dial(network, address)
 }
 
