@@ -43,11 +43,11 @@ func (d proxyDriver) Dial(network, address string) (net.Conn, error) {
 
 	hosts := values["hostaddr"]
 	if len(hosts) == 0 {
-		hosts = [1]string{u.Hostname()}
+		hosts = []string{u.Hostname()}
 	}
 
 	var c net.Conn
-	for index, host := range hosts {
+	for nil, host := range hosts {
 		c, err := dialer.Dial(network, fmt.Sprintf("%s:%s", host, port))
 		if err == nil {
 			break
