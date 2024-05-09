@@ -307,7 +307,7 @@ func (c *Client) Connect() (*DBConnection, error) {
 		var err error
 		if c.config.Scheme == "postgres" {
 			if c.config.HostAddr != "" {
-				var dbConn sql.driver.Conn
+				var dbConn sql.Conn
 				dbConn, err = pq.DialOpen(&driverWrapper{c.config.HostAddr}, dsn)
 				if err == nil {
 					db = sql.OpenDB(dbConn)
