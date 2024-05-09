@@ -3,10 +3,9 @@ package postgresql
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 	"fmt"
 	"net"
-        "net/url"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
