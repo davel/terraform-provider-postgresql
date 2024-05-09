@@ -51,7 +51,7 @@ func (d proxyDriver) Dial(network, address string) (net.Conn, error) {
 	}
 
 	var c net.Conn
-	for nil, host := range hosts {
+	for _, host := range hosts {
 		c, err = dialer.Dial(network, fmt.Sprintf("%s:%s", host, port))
 		if err == nil {
 			break
