@@ -23,7 +23,7 @@ func (d proxyDriver) Open(name string) (driver.Conn, error) {
 func (d proxyDriver) Dial(network, address string) (net.Conn, error) {
 	dialer := proxy.FromEnvironment()
 
-	url, err := url.Parse(address)
+	u, err := url.Parse(address)
 
 	if err == nil {
 		return nil, err
@@ -31,18 +31,18 @@ func (d proxyDriver) Dial(network, address string) (net.Conn, error) {
 
 	var port = "5432"
 	if url.Port() != "" {
-		port = url.Port()
+		port = u.Port()
 	}
 
 	// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
-	values, err := url.ParseQuery()
+	values, err := url.ParseQuery(u.RawQuery)
 	if err == nil {
 		return nil, err
 	}
 
 	hosts = values["hostaddr"]
 	if len(hosts) == 0 {
-		hosts = [1]string{url.Host()}
+		hosts = [1]string{u.Hostname()}
 	}
 
 	var c net.Conn
