@@ -309,7 +309,7 @@ func (c *Client) Connect() (*DBConnection, error) {
 			if c.config.HostAddr != "" {
 				c, err = pq.DialOpen(&driverWrapper{c.config.HostAddr}, dsn)
 				if err == nil {
-					db = DBOpen(c)
+					db = sql.DBOpen(c)
 				}
 
 			} else {
