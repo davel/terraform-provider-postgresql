@@ -12,6 +12,7 @@ import (
 	"time"
 	"unicode"
 
+	sql "database/sql"
 	"github.com/blang/semver"
 	pq "github.com/lib/pq" // PostgreSQL db
 	"gocloud.dev/postgres"
@@ -307,7 +308,7 @@ func (c *Client) Connect() (*DBConnection, error) {
 		var err error
 		if c.config.Scheme == "postgres" {
 			if c.config.HostAddr != "" {
-				db, err = pq.DialOpen(&driverWrapper{c.config.HostAddr}, dsn)
+				db, err = sql.OpenDB(pq.DialOpen(&driverWrapper{c.config.HostAddr}, dsn))
 
 			} else {
 				db, err = sql.Open(proxyDriverName, dsn)
