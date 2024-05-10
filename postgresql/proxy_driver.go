@@ -47,6 +47,8 @@ func (d proxyDriver) Open(name string) (driver.Conn, error) {
 
 		values.Del("hostaddr")
 		u.RawQuery = values.Encode()
+
+		return pq.DialOpen(d, u.String())
 	}
 
 	return pq.DialOpen(d, name)
