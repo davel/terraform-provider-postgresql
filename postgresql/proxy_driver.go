@@ -40,7 +40,7 @@ func (d proxyDriver) Open(name string) (driver.Conn, error) {
 			return nil, err
 		}
 		if values.Get("port") != "" {
-			port = values.Get("port")
+			d.port = values.Get("port")
 		}
 		d.hostaddr = strings.Split(values.Get("hostaddr"), ",")
 
