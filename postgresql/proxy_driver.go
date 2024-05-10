@@ -23,12 +23,10 @@ type proxyDriver struct {
 }
 
 func (d proxyDriver) Open(name string) (driver.Conn, error) {
+	u, err := url.Parse(name)
 	if err != nil {
 		return nil, err
 	}
-
-	d.dsn = name
-	u, err := url.Parse(d.dsn)
 
 	// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 	if values.Get("hostaddr") != "" {
@@ -44,7 +42,6 @@ func (d proxyDriver) Open(name string) (driver.Conn, error) {
 
 		values.Del("hostaddr")
 		u.RawQuery = values.Encode()
-
 	}
 
 	return pq.DialOpen(d, name)
@@ -55,9 +52,7 @@ func (d proxyDriver) dialWithContext(ctx context.Context, network, address strin
 	if len(d.hostaddr) == 0 {
 		return proxy.Dial(ctx, network, address)
 	}
-
-	// hostaddr supplied in DSN, so ignore supplied address and extract
-	// from DSN.
+        // hostaddr was supplied in dsn, so ignore address passed to us.
 
 	for _, host := range d.hostaddr {
 		c, e := proxy.Dial(ctx, network, net.JoinHostPort(host, d.port))
