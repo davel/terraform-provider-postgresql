@@ -18,46 +18,49 @@ import (
 const proxyDriverName = "postgresql-proxy"
 
 type proxyDriver struct {
-	dsn string
+	hostaddr []string
+	port     string
 }
 
 func (d proxyDriver) Open(name string) (driver.Conn, error) {
+	if err != nil {
+		return nil, err
+	}
+
 	d.dsn = name
+	u, err := url.Parse(d.dsn)
+
+	// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+	if values.Get("hostaddr") != "" {
+		d.port = "5432"
+		if u.Port() != "" {
+			d.port = u.Port()
+		}
+
+		if values.Get("port") != "" {
+			port = values.Get("port")
+		}
+		d.hostaddr = strings.Split(values.Get("hostaddr"), ",")
+
+		values.Del("hostaddr")
+		u.RawQuery = values.Encode()
+
+	}
+
 	return pq.DialOpen(d, name)
 }
 
 func (d proxyDriver) dialWithContext(ctx context.Context, network, address string) (net.Conn, error) {
-	u, err := url.Parse(d.dsn)
 
-	if err != nil {
-		return nil, err
-	}
-
-	values, err := url.ParseQuery(u.RawQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
-
-	if values.Get("hostaddr") == "" {
+	if len(d.hostaddr) == 0 {
 		return proxy.Dial(ctx, network, address)
 	}
 
 	// hostaddr supplied in DSN, so ignore supplied address and extract
 	// from DSN.
 
-	var port = "5432"
-	if u.Port() != "" {
-		port = u.Port()
-	}
-
-	if values.Get("port") != "" {
-		port = values.Get("port")
-	}
-
-	for _, host := range strings.Split(values.Get("hostaddr"), ",") {
-		c, e := proxy.Dial(ctx, network, net.JoinHostPort(host, port))
+	for _, host := range d.hostaddr {
+		c, e := proxy.Dial(ctx, network, net.JoinHostPort(host, d.port))
 		if e == nil {
 			return c, e
 		}
