@@ -52,7 +52,7 @@ func (d proxyDriver) dialWithContext(ctx context.Context, network, address strin
 	if len(d.hostaddr) == 0 {
 		return proxy.Dial(ctx, network, address)
 	}
-        // hostaddr was supplied in dsn, so ignore address passed to us.
+	// hostaddr was supplied in dsn, so ignore address passed to us.
 
 	for _, host := range d.hostaddr {
 		c, e := proxy.Dial(ctx, network, net.JoinHostPort(host, d.port))
