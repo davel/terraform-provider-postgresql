@@ -294,7 +294,7 @@ func (c *Client) Connect() (*DBConnection, error) {
 		}
 		if err != nil {
 			errString := strings.Replace(err.Error(), c.config.Password, "XXXX", 2)
-                        dsnString := strings.Replace(dsn, c.config.Password, "XXXX", 2)
+			dsnString := strings.Replace(dsn, c.config.Password, "XXXX", 2)
 			return nil, fmt.Errorf("Error connecting to PostgreSQL server %s (scheme: %s): %s", dsnString, c.config.Scheme, errString)
 		}
 
