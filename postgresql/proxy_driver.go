@@ -28,6 +28,11 @@ func (d proxyDriver) Open(name string) (driver.Conn, error) {
 		return nil, err
 	}
 
+	values, err := url.ParseQuery(u.RawQuery)
+	if err != nil {
+		return nil, err
+	}
+
 	// https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 	if values.Get("hostaddr") != "" {
 		d.port = "5432"
@@ -35,10 +40,6 @@ func (d proxyDriver) Open(name string) (driver.Conn, error) {
 			d.port = u.Port()
 		}
 
-		values, err := url.ParseQuery(u.RawQuery)
-		if err != nil {
-			return nil, err
-		}
 		if values.Get("port") != "" {
 			d.port = values.Get("port")
 		}
@@ -58,12 +59,13 @@ func (d proxyDriver) dialWithContext(ctx context.Context, network, address strin
 	}
 	// hostaddr was supplied in dsn, so ignore address passed to us.
 
+	var err error = nil
 	for _, host := range d.hostaddr {
 		c, e := proxy.Dial(ctx, network, net.JoinHostPort(host, d.port))
 		if e == nil {
 			return c, e
 		}
-		err = errors.Join(err, fmt.Errorf("could not connect to %s: %s", net.JoinHostPort(host, port), e))
+		err = errors.Join(err, fmt.Errorf("could not connect to %s: %s", net.JoinHostPort(host, d.port), e))
 	}
 	return nil, err
 }
