@@ -35,6 +35,10 @@ func (d proxyDriver) Open(name string) (driver.Conn, error) {
 			d.port = u.Port()
 		}
 
+		values, err := url.ParseQuery(u.RawQuery)
+		if err != nil {
+			return nil, err
+		}
 		if values.Get("port") != "" {
 			port = values.Get("port")
 		}
